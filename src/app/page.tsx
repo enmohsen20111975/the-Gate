@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { 
   Search, 
   GraduationCap, 
@@ -33,7 +34,10 @@ import {
   ChevronRight,
   Flame,
   Sparkles,
-  Download
+  Download,
+  ArrowRight,
+  Play,
+  BookMarked
 } from 'lucide-react'
 
 // Types
@@ -65,7 +69,7 @@ interface Category {
   _count?: { articles: number; courses: number }
 }
 
-// Static sample articles
+// Sample articles with full content
 const sampleArticles: Article[] = [
   {
     id: '1',
@@ -115,7 +119,36 @@ for i in range(5):
     print(f"الرقم {i}")
 \`\`\`
 
-هذا كان مجرد مقدمة بسيطة. في الدروس القادمة سنتعمق أكثر في لغة بايثون.`,
+## الشروط
+
+\`\`\`python
+age = 18
+if age >= 18:
+    print("أنت بالغ")
+else:
+    print("أنت قاصر")
+\`\`\`
+
+## القوائم
+
+\`\`\`python
+fruits = ["تفاح", "موز", "برتقال"]
+for fruit in fruits:
+    print(fruit)
+\`\`\`
+
+## القواميس
+
+\`\`\`python
+person = {
+    "name": "أحمد",
+    "age": 25,
+    "city": "القاهرة"
+}
+print(person["name"])  # أحمد
+\`\`\`
+
+هذا كان مجرد مقدمة بسيطة. في الدروس القادمة سنتعمق أكثر في لغة بايثون ونتعلم موضوعات متقدمة مثل البرمجة الكائنية والتعامل مع الملفات وقواعد البيانات.`,
     views: 15420,
     likes: 892,
     tags: 'برمجة, بايثون, تعلم, مبتدئين',
@@ -145,11 +178,16 @@ for i in range(5):
 تعلم نطق الحروف بشكل صحيح
 
 ### الكلمات الشائعة
-ابدأ بتعلم 100-500 كلمة شائعة
+ابدأ بتعلم 100-500 كلمة شائعة مثل:
+- Hello / مرحباً
+- Goodbye / وداعاً
+- Thank you / شكراً
+- Please / من فضلك
+- Yes / No / نعم / لا
 
 ### القواعد الأساسية
 - الأزمنة (الماضي، الحاضر، المستقبل)
-- الضمائر
+- الضمائر (I, You, He, She, It, We, They)
 - الجمل البسيطة
 
 ## الخطوة الثالثة: الممارسة اليومية
@@ -167,7 +205,7 @@ for i in range(5):
 
 ## نصيحة أخيرة
 
-الصبر هو مفتاح النجاح. لا تستسلم!`,
+الصبر هو مفتاح النجاح. لا تستسلم! التعلم يحتاج وقت وممارسة مستمرة.`,
     views: 28350,
     likes: 1456,
     tags: 'لغات, إنجليزي, تعلم, مبتدئين',
@@ -389,22 +427,7 @@ const categories: Category[] = [
   { id: 'science', name: 'Science', nameAr: 'العلوم', slug: 'science', icon: 'Globe', color: '#6366F1', _count: { articles: 200, courses: 35 } },
 ]
 
-const mawdoo3Categories = [
-  { name: 'العلوم', count: 15000 },
-  { name: 'التقنية', count: 12000 },
-  { name: 'الصحة', count: 18000 },
-  { name: 'الأعمال', count: 8000 },
-  { name: 'التعليم', count: 10000 },
-  { name: 'الفنون', count: 6000 },
-  { name: 'الرياضة', count: 9000 },
-  { name: 'السياحة', count: 7000 },
-  { name: 'الطبخ', count: 5000 },
-  { name: 'الدين', count: 11000 },
-  { name: 'التاريخ', count: 8000 },
-  { name: 'الأدب', count: 5500 },
-]
-
-// Category Icon
+// Category Icon Component
 function CategoryIcon({ icon, className }: { icon?: string; className?: string }) {
   const iconMap: Record<string, React.ReactNode> = {
     'Code': <Code className={className} />,
@@ -424,49 +447,9 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [activeTab, setActiveTab] = useState('home')
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [articles, setArticles] = useState<Article[]>(sampleArticles)
+  const [articles] = useState<Article[]>(sampleArticles)
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null)
-  const [showArticle, setShowArticle] = useState(false)
-  
-  // Fetch articles from API
-  const fetchArticles = useCallback(async () => {
-    setIsLoading(true)
-    try {
-      const res = await fetch('/api/articles')
-      if (res.ok) {
-        const data = await res.json()
-        if (data.success && data.data.length > 0) {
-          setArticles([...data.data, ...sampleArticles])
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching articles:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  // Scrape from Mawdoo3
-  const scrapeMawdoo3 = async () => {
-    setIsLoading(true)
-    try {
-      // First get categories
-      const catsRes = await fetch('/api/scrape/mawdoo3?action=categories')
-      if (catsRes.ok) {
-        const data = await catsRes.json()
-        console.log('Mawdoo3 categories:', data)
-      }
-    } catch (error) {
-      console.error('Error scraping Mawdoo3:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-  
-  useEffect(() => {
-    fetchArticles()
-  }, [fetchArticles])
+  const [viewMode, setViewMode] = useState<'list' | 'article'>('list')
   
   // Filter articles
   const filteredArticles = useMemo(() => {
@@ -484,117 +467,205 @@ export default function Home() {
     })
   }, [searchQuery, selectedCategory, articles])
 
-  const popularArticles = [...articles].sort((a, b) => b.views - a.views).slice(0, 5)
+  const popularArticles = useMemo(() => {
+    return [...articles].sort((a, b) => b.views - a.views)
+  }, [articles])
 
-  // Read article
-  const handleReadArticle = (article: Article) => {
+  // Open article
+  const handleOpenArticle = useCallback((article: Article) => {
     setSelectedArticle(article)
-    setShowArticle(true)
-  }
+    setViewMode('article')
+    setIsSidebarOpen(false)
+  }, [])
+
+  // Close article
+  const handleCloseArticle = useCallback(() => {
+    setSelectedArticle(null)
+    setViewMode('list')
+  }, [])
+
+  // Handle category click
+  const handleCategoryClick = useCallback((categoryId: string) => {
+    setSelectedCategory(categoryId)
+    setActiveTab('home')
+    setViewMode('list')
+    setIsSidebarOpen(false)
+  }, [])
 
   // Article View
-  if (showArticle && selectedArticle) {
+  if (viewMode === 'article' && selectedArticle) {
     return (
-      <div className="min-h-screen bg-slate-50" dir="rtl">
-        <header className="bg-white border-b sticky top-0 z-50">
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white" dir="rtl">
+        <header className="bg-white border-b sticky top-0 z-50 shadow-sm">
           <div className="container mx-auto px-4 py-3">
             <div className="flex items-center justify-between">
-              <Button variant="ghost" onClick={() => setShowArticle(false)}>
-                <X className="w-4 h-4 ml-2" />
-                العودة
+              <Button 
+                variant="ghost" 
+                onClick={handleCloseArticle}
+                className="gap-2 hover:bg-emerald-50"
+              >
+                <ArrowRight className="w-4 h-4" />
+                العودة للمقالات
               </Button>
-              <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="bg-emerald-100 text-emerald-700">
-                  داخل الموقع
-                </Badge>
-              </div>
+              <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 gap-1">
+                <BookMarked className="w-3 h-3" />
+                قراءة داخل الموقع
+              </Badge>
             </div>
           </div>
         </header>
 
         <main className="container mx-auto px-4 py-8">
-          <div className="max-w-4xl mx-auto">
-            <Card>
-              <CardHeader>
+          <article className="max-w-4xl mx-auto">
+            <Card className="border-0 shadow-lg">
+              <CardHeader className="border-b bg-gradient-to-r from-emerald-50 to-teal-50 rounded-t-lg">
                 <div className="flex items-center gap-2 mb-4">
                   {selectedArticle.category && (
-                    <Badge style={{ backgroundColor: categories.find(c => c.slug === selectedArticle.category?.slug)?.color || '#6366F1' }} className="text-white">
+                    <Badge 
+                      className="text-white px-3 py-1"
+                      style={{ 
+                        backgroundColor: categories.find(c => c.slug === selectedArticle.category?.slug)?.color || '#6366F1' 
+                      }}
+                    >
                       {selectedArticle.category.nameAr || selectedArticle.category.name}
                     </Badge>
                   )}
                 </div>
-                <CardTitle className="text-3xl font-bold leading-tight">
+                <CardTitle className="text-3xl font-bold leading-tight text-slate-800">
                   {selectedArticle.titleAr || selectedArticle.title}
                 </CardTitle>
-                <div className="flex items-center gap-4 mt-4 text-sm text-slate-500">
+                <div className="flex flex-wrap items-center gap-4 mt-4 text-sm text-slate-500">
                   <div className="flex items-center gap-1">
-                    <Eye className="w-4 h-4" />
+                    <Eye className="w-4 h-4 text-emerald-500" />
                     <span>{selectedArticle.views.toLocaleString()} مشاهدة</span>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Heart className="w-4 h-4" />
+                    <Heart className="w-4 h-4 text-rose-500" />
                     <span>{selectedArticle.likes} إعجاب</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-4 h-4 text-blue-500" />
+                    <span>آخر تحديث: اليوم</span>
                   </div>
                 </div>
                 {selectedArticle.tags && (
                   <div className="flex flex-wrap gap-2 mt-4">
                     {selectedArticle.tags.split(',').map((tag, i) => (
-                      <Badge key={i} variant="outline">{tag.trim()}</Badge>
+                      <Badge key={i} variant="outline" className="hover:bg-emerald-50 cursor-pointer">
+                        {tag.trim()}
+                      </Badge>
                     ))}
                   </div>
                 )}
               </CardHeader>
-              <CardContent className="prose prose-lg max-w-none">
+              <CardContent className="p-6 md:p-8">
                 {selectedArticle.summary && (
-                  <div className="bg-emerald-50 border-r-4 border-emerald-500 p-4 mb-6 rounded-lg">
-                    <p className="text-emerald-800 font-medium mb-0">{selectedArticle.summary}</p>
+                  <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border-r-4 border-emerald-500 p-4 mb-8 rounded-lg">
+                    <p className="text-emerald-800 font-medium text-lg mb-0">{selectedArticle.summary}</p>
                   </div>
                 )}
-                <div className="whitespace-pre-wrap leading-relaxed text-slate-700">
-                  {selectedArticle.content}
+                <div className="prose prose-lg max-w-none">
+                  <div className="whitespace-pre-wrap leading-relaxed text-slate-700 text-lg font-[system-ui]">
+                    {selectedArticle.content}
+                  </div>
                 </div>
               </CardContent>
+              <CardFooter className="border-t bg-slate-50 rounded-b-lg p-6">
+                <div className="flex flex-wrap gap-3 w-full justify-between items-center">
+                  <div className="flex gap-2">
+                    <Button variant="outline" className="gap-2">
+                      <Heart className="w-4 h-4" />
+                      أعجبني
+                    </Button>
+                    <Button variant="outline" className="gap-2">
+                      <BookMarked className="w-4 h-4" />
+                      حفظ
+                    </Button>
+                  </div>
+                  <Button 
+                    onClick={handleCloseArticle}
+                    className="bg-emerald-600 hover:bg-emerald-700 gap-2"
+                  >
+                    العودة للمقالات
+                    <ArrowRight className="w-4 h-4" />
+                  </Button>
+                </div>
+              </CardFooter>
             </Card>
-          </div>
+
+            {/* Related Articles */}
+            <div className="mt-8">
+              <h3 className="text-xl font-bold text-slate-800 mb-4">مقالات ذات صلة</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {articles
+                  .filter(a => a.id !== selectedArticle.id && a.category?.slug === selectedArticle.category?.slug)
+                  .slice(0, 2)
+                  .map(article => (
+                    <Card 
+                      key={article.id}
+                      className="cursor-pointer hover:shadow-lg transition-all hover:ring-2 hover:ring-emerald-200"
+                      onClick={() => handleOpenArticle(article)}
+                    >
+                      <CardHeader className="pb-2">
+                        <CardTitle className="text-base">{article.titleAr}</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-slate-600 line-clamp-2">{article.summary}</p>
+                      </CardContent>
+                    </Card>
+                  ))}
+              </div>
+            </div>
+          </article>
         </main>
+
+        <footer className="bg-slate-900 text-white py-6 mt-auto">
+          <div className="container mx-auto px-4 text-center">
+            <p className="text-slate-400">© 2025 المكتبة التعليمية - جميع الحقوق محفوظة</p>
+          </div>
+        </footer>
       </div>
     )
   }
 
+  // Main List View
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white" dir="rtl">
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-slate-50 to-white" dir="rtl">
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-lg border-b shadow-sm">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
+            <button 
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+              onClick={() => { setViewMode('list'); setSelectedCategory('all'); }}
+            >
               <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center">
                 <BookOpen className="w-6 h-6 text-white" />
               </div>
-              <div>
+              <div className="hidden sm:block">
                 <h1 className="text-xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
                   المكتبة التعليمية
                 </h1>
                 <p className="text-xs text-slate-500">كل المحتوى في مكان واحد</p>
               </div>
-            </div>
+            </button>
 
-            <div className="hidden md:flex flex-1 max-w-xl">
+            <div className="flex-1 max-w-xl mx-4">
               <div className="relative w-full">
                 <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                 <Input
                   type="search"
-                  placeholder="ابحث في المقالات والمحتوى..."
+                  placeholder="ابحث في المقالات..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pr-10 h-11 bg-slate-100 border-0 focus-visible:ring-emerald-500"
+                  className="pr-10 h-11 bg-slate-100 border-0 focus-visible:ring-emerald-500 focus-visible:bg-white transition-all"
                 />
               </div>
             </div>
 
             <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hidden sm:flex">
-                <Database className="w-3 h-3 ml-1" />
+              <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 hidden sm:flex gap-1">
+                <FileText className="w-3 h-3" />
                 {articles.length} مقال
               </Badge>
               <Button
@@ -610,7 +681,7 @@ export default function Home() {
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex flex-1">
         {/* Sidebar */}
         <aside className={`
           fixed md:sticky top-[65px] right-0 h-[calc(100vh-65px)] w-72 bg-white border-l z-40
@@ -624,7 +695,7 @@ export default function Home() {
                 <Button
                   variant={selectedCategory === 'all' ? 'default' : 'ghost'}
                   className={`w-full justify-start ${selectedCategory === 'all' ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
-                  onClick={() => setSelectedCategory('all')}
+                  onClick={() => handleCategoryClick('all')}
                 >
                   <Globe className="w-4 h-4 ml-2" />
                   جميع المقالات
@@ -632,9 +703,9 @@ export default function Home() {
                 {categories.map(cat => (
                   <Button
                     key={cat.id}
-                    variant={selectedCategory === cat.id ? 'default' : 'ghost'}
-                    className={`w-full justify-start ${selectedCategory === cat.id ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
-                    onClick={() => setSelectedCategory(cat.id)}
+                    variant={selectedCategory === cat.slug ? 'default' : 'ghost'}
+                    className={`w-full justify-start ${selectedCategory === cat.slug ? 'bg-emerald-600 hover:bg-emerald-700' : ''}`}
+                    onClick={() => handleCategoryClick(cat.slug)}
                   >
                     <CategoryIcon icon={cat.icon} className="w-4 h-4 ml-2" />
                     {cat.nameAr || cat.name}
@@ -655,8 +726,8 @@ export default function Home() {
                 {popularArticles.slice(0, 5).map((article, i) => (
                   <button
                     key={article.id}
-                    onClick={() => handleReadArticle(article)}
-                    className="w-full text-right p-2 rounded-lg hover:bg-slate-100 text-sm"
+                    onClick={() => handleOpenArticle(article)}
+                    className="w-full text-right p-3 rounded-lg hover:bg-emerald-50 text-sm transition-colors border border-transparent hover:border-emerald-200"
                   >
                     <span className="text-emerald-600 font-bold ml-1">{i + 1}.</span>
                     {article.titleAr || article.title}
@@ -682,10 +753,6 @@ export default function Home() {
                 <BookOpen className="w-4 h-4 ml-2" />
                 المقالات
               </TabsTrigger>
-              <TabsTrigger value="mawdoo3" className="data-[state=active]:bg-white data-[state=active]:text-emerald-600">
-                <Database className="w-4 h-4 ml-2" />
-                موسوعة موضوع
-              </TabsTrigger>
               <TabsTrigger value="courses" className="data-[state=active]:bg-white data-[state=active]:text-emerald-600">
                 <GraduationCap className="w-4 h-4 ml-2" />
                 الكورسات
@@ -694,143 +761,85 @@ export default function Home() {
 
             {/* Articles Tab */}
             <TabsContent value="home" className="space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-4">
                 <p className="text-slate-600">
                   <span className="font-bold text-emerald-600">{filteredArticles.length}</span> مقال متاح
+                  {selectedCategory !== 'all' && (
+                    <span className="mr-2">
+                      في قسم <Badge className="bg-emerald-100 text-emerald-700">
+                        {categories.find(c => c.slug === selectedCategory)?.nameAr}
+                      </Badge>
+                    </span>
+                  )}
                 </p>
                 {selectedCategory !== 'all' && (
-                  <Button variant="ghost" size="sm" onClick={() => setSelectedCategory('all')}>
-                    <X className="w-4 h-4 ml-1" />
+                  <Button variant="outline" size="sm" onClick={() => setSelectedCategory('all')} className="gap-2">
+                    <X className="w-4 h-4" />
                     مسح الفلتر
                   </Button>
                 )}
               </div>
 
-              {isLoading && (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
-                </div>
-              )}
-
-              {!isLoading && (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredArticles.map(article => (
-                    <Card 
-                      key={article.id} 
-                      className="group hover:shadow-xl transition-all duration-300 cursor-pointer hover:ring-2 hover:ring-emerald-200"
-                      onClick={() => handleReadArticle(article)}
-                    >
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <Badge 
-                            style={{ backgroundColor: categories.find(c => c.slug === article.category?.slug)?.color || '#6366F1' }}
-                            className="text-white"
-                          >
-                            {article.category?.nameAr || article.category?.name || 'عام'}
-                          </Badge>
-                          <div className="flex items-center gap-1 text-xs text-slate-500">
-                            <Eye className="w-3 h-3" />
-                            {article.views.toLocaleString()}
-                          </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {filteredArticles.map(article => (
+                  <Card 
+                    key={article.id} 
+                    className="group hover:shadow-xl transition-all duration-300 cursor-pointer hover:ring-2 hover:ring-emerald-200 border-0 shadow-md"
+                    onClick={() => handleOpenArticle(article)}
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <Badge 
+                          style={{ backgroundColor: categories.find(c => c.slug === article.category?.slug)?.color || '#6366F1' }}
+                          className="text-white"
+                        >
+                          {article.category?.nameAr || article.category?.name || 'عام'}
+                        </Badge>
+                        <div className="flex items-center gap-1 text-xs text-slate-500">
+                          <Eye className="w-3 h-3" />
+                          {article.views.toLocaleString()}
                         </div>
-                        <CardTitle className="text-lg line-clamp-2 mt-2 group-hover:text-emerald-600 transition-colors">
-                          {article.titleAr || article.title}
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent className="pb-3">
-                        <p className="text-sm text-slate-600 line-clamp-3">
-                          {article.summary}
-                        </p>
-                        {article.tags && (
-                          <div className="flex flex-wrap gap-1 mt-3">
-                            {article.tags.split(',').slice(0, 3).map((tag, i) => (
-                              <Badge key={i} variant="outline" className="text-xs">{tag.trim()}</Badge>
-                            ))}
-                          </div>
-                        )}
-                      </CardContent>
-                      <CardFooter className="pt-0">
-                        <Button className="w-full bg-emerald-600 hover:bg-emerald-700 group-hover:bg-emerald-700">
-                          اقرأ المقال
-                          <ChevronRight className="w-4 h-4 mr-2 group-hover:translate-x-[-4px] transition-transform" />
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  ))}
-                </div>
-              )}
+                      </div>
+                      <CardTitle className="text-lg line-clamp-2 mt-2 group-hover:text-emerald-600 transition-colors">
+                        {article.titleAr || article.title}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pb-3">
+                      <p className="text-sm text-slate-600 line-clamp-3">
+                        {article.summary}
+                      </p>
+                      {article.tags && (
+                        <div className="flex flex-wrap gap-1 mt-3">
+                          {article.tags.split(',').slice(0, 3).map((tag, i) => (
+                            <Badge key={i} variant="outline" className="text-xs">{tag.trim()}</Badge>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                    <CardFooter className="pt-0">
+                      <Button className="w-full bg-emerald-600 hover:bg-emerald-700 group-hover:bg-emerald-700 gap-2">
+                        اقرأ المقال
+                        <ChevronRight className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                ))}
+              </div>
 
-              {!isLoading && filteredArticles.length === 0 && (
+              {filteredArticles.length === 0 && (
                 <div className="text-center py-12">
                   <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                   <h3 className="text-lg font-semibold text-slate-700">لا توجد مقالات</h3>
                   <p className="text-slate-500 mt-2">جرب تغيير البحث أو الفلتر</p>
+                  <Button 
+                    variant="outline" 
+                    className="mt-4" 
+                    onClick={() => { setSearchQuery(''); setSelectedCategory('all'); }}
+                  >
+                    مسح الفلاتر
+                  </Button>
                 </div>
               )}
-            </TabsContent>
-
-            {/* Mawdoo3 Tab */}
-            <TabsContent value="mawdoo3" className="space-y-6">
-              <Card className="border-2 border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50">
-                <CardHeader>
-                  <CardTitle className="text-2xl flex items-center gap-2">
-                    <Database className="w-6 h-6 text-emerald-600" />
-                    موسوعة موضوع - داخل الموقع
-                  </CardTitle>
-                  <CardDescription className="text-base">
-                    أكبر موسوعة عربية - أكثر من 1,000,000 مقال
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <div className="bg-white p-4 rounded-lg text-center shadow-sm">
-                      <div className="text-2xl font-bold text-emerald-600">+100M</div>
-                      <div className="text-sm text-slate-600">زائر شهرياً</div>
-                    </div>
-                    <div className="bg-white p-4 rounded-lg text-center shadow-sm">
-                      <div className="text-2xl font-bold text-emerald-600">+1M</div>
-                      <div className="text-sm text-slate-600">مقال عربي</div>
-                    </div>
-                    <div className="bg-white p-4 rounded-lg text-center shadow-sm">
-                      <div className="text-2xl font-bold text-emerald-600">+18</div>
-                      <div className="text-sm text-slate-600">تصنيف رئيسي</div>
-                    </div>
-                    <div className="bg-white p-4 rounded-lg text-center shadow-sm">
-                      <div className="text-2xl font-bold text-emerald-600">2009</div>
-                      <div className="text-sm text-slate-600">سنة التأسيس</div>
-                    </div>
-                  </div>
-
-                  <div className="mt-6">
-                    <h3 className="font-bold text-slate-700 mb-3">التصنيفات المتاحة:</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                      {mawdoo3Categories.map((cat, i) => (
-                        <div 
-                          key={i}
-                          className="bg-white p-3 rounded-lg border hover:border-emerald-300 hover:shadow cursor-pointer transition-all"
-                        >
-                          <div className="font-medium text-slate-800">{cat.name}</div>
-                          <div className="text-xs text-slate-500">{cat.count.toLocaleString()} مقال</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex flex-wrap gap-3">
-                  <Button 
-                    className="bg-emerald-600 hover:bg-emerald-700 flex-1"
-                    onClick={scrapeMawdoo3}
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-                    ) : (
-                      <Download className="w-4 h-4 ml-2" />
-                    )}
-                    تحميل المقالات
-                  </Button>
-                </CardFooter>
-              </Card>
             </TabsContent>
 
             {/* Courses Tab */}
@@ -844,9 +853,13 @@ export default function Home() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-                  {categories.slice(0, 6).map(cat => (
-                    <Card key={cat.id} className="hover:shadow-lg transition-shadow">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+                  {categories.map(cat => (
+                    <Card 
+                      key={cat.id} 
+                      className="hover:shadow-lg transition-all cursor-pointer hover:ring-2 hover:ring-emerald-200 border-0 shadow-md"
+                      onClick={() => handleCategoryClick(cat.slug)}
+                    >
                       <CardHeader className="pb-2">
                         <div className="flex items-center gap-3">
                           <div 
@@ -874,16 +887,19 @@ export default function Home() {
                             <FileText className="w-3 h-3 ml-1" />
                             نصوص
                           </Badge>
-                          <Badge variant="secondary" className="bg-purple-100 text-purple-700">
-                            <Pen className="w-3 h-3 ml-1" />
-                            تمارين
-                          </Badge>
                         </div>
                       </CardContent>
                       <CardFooter>
-                        <Button className="w-full" variant="outline">
-                          استعرض الكورسات
-                          <ChevronRight className="w-4 h-4 mr-2" />
+                        <Button 
+                          className="w-full bg-emerald-600 hover:bg-emerald-700 gap-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCategoryClick(cat.slug);
+                            setActiveTab('home');
+                          }}
+                        >
+                          استعرض المقالات
+                          <ChevronRight className="w-4 h-4" />
                         </Button>
                       </CardFooter>
                     </Card>
@@ -907,14 +923,19 @@ export default function Home() {
                 <h3 className="text-xl font-bold">المكتبة التعليمية</h3>
               </div>
               <p className="text-slate-400">
-                بوابة تعليمية شاملة - كل المحتوى في مكان واحد دون الحاجة لمغادرة الموقع
+                بوابة تعليمية شاملة - كل المحتوى في مكان واحد
               </p>
             </div>
             <div>
               <h4 className="font-bold mb-4">التصنيفات</h4>
               <div className="flex flex-wrap gap-2">
                 {categories.slice(0, 6).map(cat => (
-                  <Badge key={cat.id} variant="secondary" className="bg-slate-800 cursor-pointer hover:bg-slate-700">
+                  <Badge 
+                    key={cat.id} 
+                    variant="secondary" 
+                    className="bg-slate-800 cursor-pointer hover:bg-slate-700"
+                    onClick={() => handleCategoryClick(cat.slug)}
+                  >
                     {cat.nameAr || cat.name}
                   </Badge>
                 ))}
@@ -930,10 +951,6 @@ export default function Home() {
                 <div className="flex items-center gap-2">
                   <Video className="w-4 h-4 text-emerald-500" />
                   <span>150+ درس فيديو</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Database className="w-4 h-4 text-emerald-500" />
-                  <span>1M+ مقال من موضوع</span>
                 </div>
               </div>
             </div>
