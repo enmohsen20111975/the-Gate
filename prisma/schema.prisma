@@ -23,13 +23,14 @@ model User {
 model Category {
   id          String    @id @default(cuid())
   name        String
-  nameAr      String?   // Arabic name
+  nameAr      String?
   slug        String    @unique
   icon        String?
   color       String?
   description String?
   courses     Course[]
   articles    Article[]
+  topics      Topic[]
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 }
@@ -38,7 +39,7 @@ model Category {
 model Language {
   id        String    @id @default(cuid())
   name      String
-  code      String    @unique // en, ar, fr, etc.
+  code      String    @unique
   courses   Course[]
   articles  Article[]
   createdAt DateTime  @default(now())
@@ -58,75 +59,171 @@ model Platform {
   updatedAt   DateTime @updatedAt
 }
 
-// Main Course Model
+// Main Course Model - with full content
 model Course {
-  id          String   @id @default(cuid())
-  title       String
-  titleAr     String?  // Arabic title
-  description String?
+  id            String    @id @default(cuid())
+  title         String
+  titleAr       String?
+  description   String?
   descriptionAr String?
-  url         String
-  imageUrl    String?
-  instructor  String?
-  duration    String?  // e.g., "10 hours", "4 weeks"
-  level       String?  // beginner, intermediate, advanced
-  rating      Float?   // 0-5
-  enrollments String?  // Number of students
-  price       String?  // "Free", "Free with certificate", etc.
-  certificate Boolean  @default(false)
-  isFree      Boolean  @default(true)
-  featured    Boolean  @default(false)
+  sourceUrl     String    // Original URL for reference
+  imageUrl      String?
+  instructor    String?
+  instructorBio String?
+  duration      String?
+  level         String?
+  rating        Float?
+  enrollments   String?
+  price         String?
+  certificate   Boolean   @default(false)
+  isFree        Boolean   @default(true)
+  featured      Boolean   @default(false)
+  published     Boolean   @default(true)
+  
+  // Full course content
+  syllabus      String?   // Course outline in JSON
+  prerequisites String?
+  objectives    String?   // Learning objectives
   
   // Relations
-  categoryId  String
-  category    Category @relation(fields: [categoryId], references: [id])
-  languageId  String
-  language    Language @relation(fields: [languageId], references: [id])
-  platformId  String
-  platform    Platform @relation(fields: [platformId], references: [id])
+  categoryId    String
+  category      Category  @relation(fields: [categoryId], references: [id])
+  languageId    String
+  language      Language  @relation(fields: [languageId], references: [id])
+  platformId    String
+  platform      Platform  @relation(fields: [platformId], references: [id])
+  
+  // Course lessons
+  lessons       Lesson[]
   
   // Tags for search
-  tags        String?  // Comma-separated tags
+  tags          String?
   
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Stats
+  views         Int       @default(0)
+  likes         Int       @default(0)
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
-// Mawdoo3 Articles
-model Article {
+// Lessons within a course
+model Lesson {
   id          String   @id @default(cuid())
   title       String
   titleAr     String?
-  content     String?  // Main content
-  contentHtml String?  // HTML content
-  summary     String?  // Brief summary
-  url         String   // Original URL
-  imageUrl    String?
+  description String?
+  descriptionAr String?
+  order       Int      @default(0)
+  duration    String?  // Lesson duration
+  videoUrl    String?  // Embedded video URL
+  audioUrl    String?
+  
+  // Content blocks
+  content     String?  // Full text content
+  contentHtml String?  // HTML formatted content
   
   // Relations
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  // Resources (links, files, etc.)
+  resources   String?  // JSON array of resources
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@index([courseId])
+}
+
+// Topics for articles (like Mawdoo3 categories)
+model Topic {
+  id          String    @id @default(cuid())
+  name        String
+  nameAr      String?
+  slug        String    @unique
+  description String?
+  imageUrl    String?
+  parentId    String?
+  parent      Topic?    @relation("TopicHierarchy", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  children    Topic[]   @relation("TopicHierarchy")
+  articles    Article[]
   categoryId  String?
   category    Category? @relation(fields: [categoryId], references: [id])
-  languageId  String
-  language    Language  @relation(fields: [languageId], references: [id])
-  
-  // Metadata
-  author      String?
-  views       Int      @default(0)
-  tags        String?
-  
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+// Articles with full content (like Mawdoo3)
+model Article {
+  id            String   @id @default(cuid())
+  title         String
+  titleAr       String?
+  content       String?  // Main content in plain text
+  contentHtml   String?  // HTML formatted content
+  summary       String?  // Brief summary
+  sourceUrl     String?  // Original URL if scraped
+  imageUrl      String?
+  videoUrl      String?
+  
+  // Relations
+  categoryId    String?
+  category      Category? @relation(fields: [categoryId], references: [id])
+  languageId    String
+  language      Language  @relation(fields: [languageId], references: [id])
+  topicId       String?
+  topic         Topic?    @relation(fields: [topicId], references: [id])
+  
+  // Metadata
+  author        String?
+  authorBio     String?
+  views         Int       @default(0)
+  likes         Int       @default(0)
+  tags          String?
+  keywords      String?   // SEO keywords
+  
+  // Content sections (JSON array for structured content)
+  sections      String?   // JSON array of content sections
+  
+  // Related articles
+  relatedIds    String?   // JSON array of related article IDs
+  
+  // Scraping info
+  scrapedAt     DateTime?
+  source        String?   // "mawdoo3", "wikipedia", "custom"
+  
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  @@index([categoryId])
+  @@index([topicId])
+  @@index([languageId])
 }
 
 // Scraping Queue for managing data collection
 model ScrapingJob {
   id          String   @id @default(cuid())
-  type        String   // "course", "article", "category"
+  type        String   // "course", "article", "mawdoo3", "lesson"
   url         String
   status      String   @default("pending") // pending, processing, completed, failed
   data        String?  // JSON data
   error       String?
+  priority    Int      @default(0)
   attempts    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Content sources for scraping
+model ContentSource {
+  id          String   @id @default(cuid())
+  name        String
+  url         String
+  type        String   // "mawdoo3", "khanacademy", "coursera", etc.
+  description String?
+  isActive    Boolean  @default(true)
+  lastScraped DateTime?
+  articleCount Int     @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
