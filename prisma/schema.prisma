@@ -1,0 +1,132 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model for future authentication
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Course Categories
+model Category {
+  id          String    @id @default(cuid())
+  name        String
+  nameAr      String?   // Arabic name
+  slug        String    @unique
+  icon        String?
+  color       String?
+  description String?
+  courses     Course[]
+  articles    Article[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Languages for courses and articles
+model Language {
+  id        String    @id @default(cuid())
+  name      String
+  code      String    @unique // en, ar, fr, etc.
+  courses   Course[]
+  articles  Article[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
+
+// Course Platforms (Coursera, edX, Khan Academy, etc.)
+model Platform {
+  id          String   @id @default(cuid())
+  name        String
+  slug        String   @unique
+  url         String
+  logo        String?
+  description String?
+  courses     Course[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Main Course Model
+model Course {
+  id          String   @id @default(cuid())
+  title       String
+  titleAr     String?  // Arabic title
+  description String?
+  descriptionAr String?
+  url         String
+  imageUrl    String?
+  instructor  String?
+  duration    String?  // e.g., "10 hours", "4 weeks"
+  level       String?  // beginner, intermediate, advanced
+  rating      Float?   // 0-5
+  enrollments String?  // Number of students
+  price       String?  // "Free", "Free with certificate", etc.
+  certificate Boolean  @default(false)
+  isFree      Boolean  @default(true)
+  featured    Boolean  @default(false)
+  
+  // Relations
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  languageId  String
+  language    Language @relation(fields: [languageId], references: [id])
+  platformId  String
+  platform    Platform @relation(fields: [platformId], references: [id])
+  
+  // Tags for search
+  tags        String?  // Comma-separated tags
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// Mawdoo3 Articles
+model Article {
+  id          String   @id @default(cuid())
+  title       String
+  titleAr     String?
+  content     String?  // Main content
+  contentHtml String?  // HTML content
+  summary     String?  // Brief summary
+  url         String   // Original URL
+  imageUrl    String?
+  
+  // Relations
+  categoryId  String?
+  category    Category? @relation(fields: [categoryId], references: [id])
+  languageId  String
+  language    Language  @relation(fields: [languageId], references: [id])
+  
+  // Metadata
+  author      String?
+  views       Int      @default(0)
+  tags        String?
+  
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+// Scraping Queue for managing data collection
+model ScrapingJob {
+  id          String   @id @default(cuid())
+  type        String   // "course", "article", "category"
+  url         String
+  status      String   @default("pending") // pending, processing, completed, failed
+  data        String?  // JSON data
+  error       String?
+  attempts    Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
